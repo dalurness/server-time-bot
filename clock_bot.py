@@ -33,7 +33,10 @@ def get_time(timezone, twelve_hour):
         is_pm = True
         time_string = str(int(time_string.split(":")[0]) - 12) + ":" + time_string.split(":")[1]
 
-    am_pm = "pm" if is_pm else "am"
+    am_pm = ""
+    if twelve_hour == True:
+        am_pm = "pm" if is_pm else "am"
+
     time_string = 'servertime ' + time_string + am_pm
     return time_string
 
@@ -83,13 +86,14 @@ async def after_update_time():
 @client.command(name='set_timezone')
 async def set_timezone(context, *args):
     global saved_guilds
+    twelve_hour = False
 
     try:
         timezone = pytz.timezone(args[0])
     except:
         await context.send('Invalid Timezone. Please visit https://en.wikipedia.org/wiki/List_of_tz_database_time_zones in the "TZ database name" section.')
         return
-    
+
     if len(args) == 2:
         if args[1] == "twelve_hour":
             twelve_hour = True
