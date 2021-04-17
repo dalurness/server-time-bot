@@ -3,8 +3,10 @@ from discord.ext import commands, tasks
 from datetime import datetime
 import pytz
 
-# import asyncio
-# from threading import Thread
+#import logging
+
+#logging.basicConfig(level=logging.INFO)
+
 
 from dotenv import load_dotenv
 import os
@@ -17,17 +19,11 @@ client = commands.Bot(command_prefix='clock--', help_command=None)
 timezone = None
 saved_guild = None
 twelve_hour = False
-# thread = None
-# loop = None
 
 @tasks.loop(seconds=30)
 async def update_time():
     if timezone == None or saved_guild == None:
-        print("exiting")
-        # loop.call_soon_threadsafe(loop.stop)
-        # thread.join()
         return
-    #threading.Timer(0.5, update_time).start()
     
     time_string = str(datetime.now(timezone).strftime('%H:%M'))
     
@@ -46,16 +42,20 @@ async def update_time():
         first_word = channel.name.split(" ")[0]
         if first_word == 'servertime':
             channel_exists = True
-            print(await channel.edit(name=new_title))
+            await channel.edit(name=new_title)
             break
 
     #create new channel
     if not channel_exists:
-        print(await saved_guild.create_voice_channel(new_title))
-    
-    # recurse
-    print("loop")
+        await saved_guild.create_voice_channel(new_title)
 
+@update_time.before_loop
+async def before_update_time():
+    await client.wait_until_ready()
+
+@update_time.after_loop
+async def after_update_time():
+    print('loop has stopped')
 
 @client.command(name='set_timezone')
 async def set_timezone(context, *args):
@@ -73,6 +73,9 @@ async def set_timezone(context, *args):
         if args[1] == "twelve_hour":
             twelve_hour = True
 
+    if saved_guild != None:
+        return
+
     saved_guild = context.guild
 
     update_time.start()
@@ -85,7 +88,7 @@ async def stop(context):
     global update_time
     timezone = None
     twelve_hour = None
-    saved_guild = None
+    
     update_time.cancel()
 
     for channel in saved_guild.channels:
@@ -94,6 +97,8 @@ async def stop(context):
             channel_exists = True
             await channel.delete()
             break
+
+    saved_guild = None
 
     await context.send("Server Clock has been deactivated")
 
@@ -108,27 +113,6 @@ async def help_funct(context):
     em.add_field(name="clock--stop", value="Stops the server clock and deletes the associated voice channel")
 
     await context.send(embed=em)
-
-    
-
-    
-    #await context.guild.create_text_channel('test')
-    # channels = context.guild.channels
-    # server_exists = False
-    # for channel in channels:
-    #     first_word = channel.name.split(" ")[0]
-    #     if first_word == 'servertime':
-    #         await channel.delete()
-    #         break
-    
-
-    # loop  = asyncio.get_event_loop()
-    # loop.create_task(update_time())
-
-    # thread = Thread(target=loop.run_forever)
-
-    # thread.start()
-
 
 # run the client on server
 client.run(os.getenv("SECRET_CODE"))
