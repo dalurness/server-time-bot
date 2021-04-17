@@ -20,7 +20,7 @@ timezone = None
 saved_guild = None
 twelve_hour = False
 
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=6)
 async def update_time():
     if timezone == None or saved_guild == None:
         return
@@ -91,14 +91,14 @@ async def stop(context):
     
     update_time.cancel()
 
-    for channel in saved_guild.channels:
-        first_word = channel.name.split(" ")[0]
-        if first_word == 'servertime':
-            channel_exists = True
-            await channel.delete()
-            break
-
-    saved_guild = None
+    if saved_guild != None:
+        for channel in saved_guild.channels:
+            first_word = channel.name.split(" ")[0]
+            if first_word == 'servertime':
+                channel_exists = True
+                await channel.delete()
+                break
+        saved_guild = None
 
     await context.send("Server Clock has been deactivated")
 
