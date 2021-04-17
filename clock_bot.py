@@ -20,7 +20,7 @@ timezone = None
 saved_guild = None
 twelve_hour = False
 
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=5)
 async def update_time():
     if timezone == None or saved_guild == None:
         return
