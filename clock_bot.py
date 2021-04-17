@@ -111,12 +111,16 @@ async def set_timezone(context, *args):
 
 @client.command(name='stop')
 async def stop(context):
+    global saved_guilds
     # remove channel
     for channel in context.guild.channels:
         first_word = channel.name.split(" ")[0]
         if first_word == 'servertime':
             await channel.delete()
             break
+
+    # delete from array
+    saved_guilds[:] = [g for g in saved_guilds if g.get('guild').get('id') != context.guild.id]
 
     await context.send("Server Clock has been deactivated")
 
