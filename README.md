@@ -26,4 +26,4 @@ Stops the server clock and deletes the associated voice channel
 ##### clock--help
 Displays help message showing available commands.
 
-# Due to Discord Rate Limits, the clock will always be a couple minutes off. It is best used for general timekeeping and not precision.
+# Due to Discord Rate Limits, the clock will always be slightly off.
