@@ -40,7 +40,7 @@ def get_time(timezone, twelve_hour):
     time_string = 'servertime ' + time_string + am_pm
     return time_string
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=30)
 async def update_time():
     global saved_guilds
 
@@ -75,13 +75,68 @@ async def initialize_timekeeper(context, timezone, twelve_hour):
     if not channel_exists:
         await context.guild.create_voice_channel(new_title)
 
+async def restore_from_storage():
+    file = open("restore.txt","r")
+    text = file.read()
+    file.close()
+    split_text = text.split('|')
+
+    #get each item and store it into saved_guilds
+    for i in range(1, len(split_text), 3):
+        new_guild = client.get_guild(int(split_text[i]))
+        saved_guilds.append({"guild": new_guild, "timezone": pytz.timezone(split_text[i+1]), "twelve_hour": bool(split_text[i+2])})
+
 @update_time.before_loop
 async def before_update_time():
     await client.wait_until_ready()
+    await restore_from_storage()
 
 @update_time.after_loop
 async def after_update_time():
     print("loop unexpectedly ended")
+
+def add_to_storage(id, tz, hr):
+    # add to storage file
+    file = open("restore.txt","a+")
+    file.write(f'|{str(id)}|{tz}|{str(hr)}')
+    file.close()
+
+def edit_in_storage(id, tz, hr):
+    file = open("restore.txt","r")
+    text = file.read()
+    file.close()
+    split_text = text.split('|')
+
+    # find correct location and edit it
+    for i in range(0, len(split_text)):
+        if split_text[i] == str(id):
+            split_text[i+1] = tz
+            split_text[i+2] = str(hr)
+            break
+    
+    #save
+    joined_text = "|".join(split_text)
+    file = open("restore.txt","w")
+    file.write(joined_text)
+    file.close()
+
+def delete_from_storage(id):
+    file = open("restore.txt","r")
+    text = file.read()
+    file.close()
+    split_text = text.split('|')
+    for i in range(0, len(split_text)):
+        if split_text[i] == str(id):
+            split_text.pop(i+2)
+            split_text.pop(i+1)
+            split_text.pop(i)
+            break
+    
+    #save
+    joined_text = "|".join(split_text)
+    file = open("restore.txt","w")
+    file.write(joined_text)
+    file.close()    
 
 @client.command(name='set_timezone')
 async def set_timezone(context, *args):
@@ -103,8 +158,11 @@ async def set_timezone(context, *args):
         if context.guild.id == saved_guild["guild"].id:
             saved_guild["timezone"] = timezone
             saved_guild["twelve_hour"] = twelve_hour
+            edit_in_storage(str(context.guild.id), args[0], str(twelve_hour))
             return
-
+    
+    #add to text storage and guilds storage
+    add_to_storage(str(context.guild.id), args[0], str(twelve_hour))
     saved_guilds.append({"guild": context.guild, "timezone": timezone, "twelve_hour": twelve_hour})
 
     await initialize_timekeeper(context, timezone, twelve_hour)
@@ -119,8 +177,11 @@ async def stop(context):
             await channel.delete()
             break
 
+    # delete from storage
+    delete_from_storage(str(context.guild.id))
+
     # delete from array
-    saved_guilds[:] = [g for g in saved_guilds if g.get('guild').get('id') != context.guild.id]
+    saved_guilds[:] = [g for g in saved_guilds if g.get('guild').id != context.guild.id]
 
     await context.send("Server Clock has been deactivated")
 
