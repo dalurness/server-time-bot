@@ -40,7 +40,7 @@ def get_time(timezone, twelve_hour):
     time_string = 'servertime ' + time_string + am_pm
     return time_string
 
-@tasks.loop(seconds=30)
+@tasks.loop(minutes=1)
 async def update_time():
     global saved_guilds
 
@@ -76,15 +76,18 @@ async def initialize_timekeeper(context, timezone, twelve_hour):
         await context.guild.create_voice_channel(new_title)
 
 async def restore_from_storage():
-    file = open("restore.txt","r")
-    text = file.read()
-    file.close()
-    split_text = text.split('|')
+    try:
+        file = open("restore.txt","r")
+        text = file.read()
+        file.close()
+        split_text = text.split('|')
 
-    #get each item and store it into saved_guilds
-    for i in range(1, len(split_text), 3):
-        new_guild = client.get_guild(int(split_text[i]))
-        saved_guilds.append({"guild": new_guild, "timezone": pytz.timezone(split_text[i+1]), "twelve_hour": bool(split_text[i+2])})
+        #get each item and store it into saved_guilds
+        for i in range(1, len(split_text), 3):
+            new_guild = client.get_guild(int(split_text[i]))
+            saved_guilds.append({"guild": new_guild, "timezone": pytz.timezone(split_text[i+1]), "twelve_hour": bool(split_text[i+2])})
+    except:
+        return
 
 @update_time.before_loop
 async def before_update_time():
