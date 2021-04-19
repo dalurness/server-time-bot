@@ -44,21 +44,25 @@ def get_time(timezone, twelve_hour):
 async def update_time():
     global saved_guilds
 
-    #update previous channel
-    for saved_guild in saved_guilds:
-        new_title = get_time(saved_guild["timezone"], saved_guild["twelve_hour"])
-        channel_exists = False
-        for channel in saved_guild["guild"].channels:
-            first_word = channel.name.split(" ")[0]
-            if first_word == 'servertime':
-                await channel.delete()
-                #channel_exists = True
-                #await channel.edit(name=new_title)
-                #break
+    try:
+        #update previous channel
+        for saved_guild in saved_guilds:
+            new_title = get_time(saved_guild["timezone"], saved_guild["twelve_hour"])
+            channel_exists = False
+            #print(saved_guild)
+            for channel in saved_guild["guild"].channels:
+                first_word = channel.name.split(" ")[0]
+                if first_word == 'servertime':
+                    await channel.delete()
+                    #channel_exists = True
+                    #await channel.edit(name=new_title)
+                    #break
 
-        #create new channel
-        if not channel_exists:
-            await saved_guild["guild"].create_voice_channel(new_title)
+            #create new channel
+            if not channel_exists:
+                await saved_guild["guild"].create_voice_channel(new_title)
+    except Exception as e:
+        print(e)
 
 async def initialize_timekeeper(context, timezone, twelve_hour):
     new_title = get_time(timezone, twelve_hour)
@@ -83,11 +87,30 @@ async def restore_from_storage():
         split_text = text.split('|')
 
         #get each item and store it into saved_guilds
+        to_delete = []
         for i in range(1, len(split_text), 3):
             new_guild = client.get_guild(int(split_text[i]))
-            saved_guilds.append({"guild": new_guild, "timezone": pytz.timezone(split_text[i+1]), "twelve_hour": bool(split_text[i+2])})
-    except:
-        return
+            if new_guild == None:
+                to_delete.append(i)
+            else:
+                saved_guilds.append({"guild": new_guild, "timezone": pytz.timezone(split_text[i+1]), "twelve_hour": bool(split_text[i+2])})
+
+        # delete guilds that no longer subscribe to the bot
+        if len(to_delete) != 0:
+            for i in range(len(to_delete), 0, -1):
+                split_text.pop(to_delete[i-1] + 2)
+                split_text.pop(to_delete[i-1] + 1)
+                split_text.pop(to_delete[i-1])
+
+            #save
+            joined_text = "|".join(split_text)
+            file = open("restore.txt","w")
+            file.write(joined_text)
+            file.close()
+                
+
+    except Exception as e:
+        print(e)
 
 @update_time.before_loop
 async def before_update_time():
