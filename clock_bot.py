@@ -20,9 +20,6 @@ saved_guilds = []
 
 def get_time(timezone, twelve_hour):
     time_string = str(datetime.now(timezone).strftime('%H:%M'))
-    
-    if int(time_string.split(":")[0]) == 0:
-        time_string = "12:" + time_string.split(":")[1]
 
     is_pm = False
     if int(time_string.split(":")[0]) == 12:
@@ -36,6 +33,8 @@ def get_time(timezone, twelve_hour):
     am_pm = ""
     if twelve_hour == True:
         am_pm = "pm" if is_pm else "am"
+        if int(time_string.split(":")[0]) == 0:
+            time_string = "12:" + time_string.split(":")[1]
 
     time_string = 'servertime ' + time_string + am_pm
     return time_string
