@@ -1,3 +1,6 @@
+# CURRENTLY DOWN AND WAITING FOR SUPPORT 
+I have taken the bot down and not updated it due to a flaw in the discord API. I have contacted their support for help but have not been able to solve the issue up to this point. The base function of the bot is deleting and then re-creating a channel with the proper time displayed. Over time as the bot runs on the server, the discord API will fail to delete the channel it created at a seemingly random time. That channel then goes into a sort of corrupted state, where it will not allow you to delete it through the api or through any of the GUI interfaces (mobile, pc, or web). This has caused me and others some frustration, as it clogs up your server with channels that cannot be deleted (it will continue to happen. The most I have had at one time is 5). Until this problem is resolved, I do not plan on allowing the bot to run. Sorry for the inconvenience and I hope as much as you do that I can display a consistent time in my servers in the near future.
+
 # Server Time Bot
 ### Get started
 
